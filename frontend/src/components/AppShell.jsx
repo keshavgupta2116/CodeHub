@@ -1,7 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import {
-  LayoutDashboard, Code2, FolderKanban, HelpCircle, User, LogOut
+  LayoutDashboard, Code2, FolderKanban, HelpCircle, User, LogOut, ListTodo, BarChart3
 } from 'lucide-react';
 
 const navItems = [
@@ -9,6 +9,8 @@ const navItems = [
   { to: '/editor',    icon: <Code2 size={18} />,           label: 'Editor' },
   { to: '/projects',  icon: <FolderKanban size={18} />,    label: 'Projects' },
   { to: '/community', icon: <HelpCircle size={18} />,      label: 'Community' },
+  { to: '/tasks',     icon: <ListTodo size={18} />,        label: 'Tasks' },
+  { to: '/analytics', icon: <BarChart3 size={18} />,       label: 'Analytics' },
   { to: '/profile',   icon: <User size={18} />,            label: 'Profile' },
 ];
 
@@ -16,7 +18,10 @@ export default function AppShell() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => { logout(); navigate('/'); };
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   return (
     <div className="app-shell">

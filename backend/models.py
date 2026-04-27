@@ -18,6 +18,7 @@ class User(Base):
     projects = relationship("Project", back_populates="owner", cascade="all, delete")
     help_posts = relationship("HelpPost", back_populates="author", cascade="all, delete")
     replies = relationship("Reply", back_populates="author", cascade="all, delete")
+    tasks = relationship("Task", cascade="all, delete")
 
 
 class Project(Base):
@@ -66,3 +67,18 @@ class Reply(Base):
 
     post = relationship("HelpPost", back_populates="replies")
     author = relationship("User", back_populates="replies")
+
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(160), nullable=False)
+    category = Column(String(40), nullable=False, default="Personal")
+    deadline = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String(20), nullable=False, default="pending")  # pending | done
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User")

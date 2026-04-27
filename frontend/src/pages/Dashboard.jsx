@@ -1,13 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { ArrowRight, BarChart3, Code2, FolderKanban, HelpCircle, ListTodo, Plus } from 'lucide-react';
+import { useAuth } from '../context/useAuth';
 import api from '../api/client';
-import { Code2, FolderKanban, HelpCircle, MessageSquare, Plus, ArrowRight } from 'lucide-react';
+
+const EMPTY_STATS = {
+  projects: 0,
+  help_posts: 0,
+  replies_given: 0,
+  reputation: 0,
+  total_tasks: 0,
+  completed_tasks: 0,
+  pending_tasks: 0,
+  late_tasks: 0,
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ projects: 0, help_posts: 0, replies_given: 0 });
+  const [stats, setStats] = useState(EMPTY_STATS);
   const [recentProjects, setRecentProjects] = useState([]);
   const [recentPosts, setRecentPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,50 +26,85 @@ export default function Dashboard() {
   useEffect(() => {
     const load = async () => {
       try {
-        const [s, p, c] = await Promise.all([
+        const [statsRes, projectsRes, communityRes] = await Promise.all([
           api.get('/users/me/stats'),
           api.get('/projects/'),
           api.get('/community/posts'),
         ]);
-        setStats(s.data);
-        setRecentProjects(p.data.slice(0, 4));
-        setRecentPosts(c.data.slice(0, 4));
-      } catch (_) {}
+        setStats(statsRes.data);
+        setRecentProjects(projectsRes.data.slice(0, 4));
+        setRecentPosts(communityRes.data.slice(0, 4));
+      } catch (error) {
+        console.warn('Dashboard data load failed', error);
+      }
       setLoading(false);
     };
+
     load();
   }, []);
 
-  const langColor = { python:'var(--blue)', javascript:'var(--yellow)', java:'var(--red)', 'c++':'var(--purple-lt)', html:'var(--yellow)' };
+  const summaryCards = [
+    { icon: 'Projects', emoji: '🗂️', value: stats.projects, color: 'var(--purple-lt)' },
+    { icon: 'Help Posts', emoji: '🆘', value: stats.help_posts, color: 'var(--blue)' },
+    { icon: 'Replies Given', emoji: '✅', value: stats.replies_given, color: 'var(--green)' },
+    { icon: 'Reputation', emoji: '⭐', value: stats.reputation, color: 'var(--yellow)' },
+  ];
 
   return (
-    <div className="page animate-fade" style={{ maxWidth: '1100px' }}>
+    <div className="page animate-fade dashboard-page">
       <div className="page-header">
-        <h1>Welcome back, {user?.username} 👋</h1>
-        <p className="text-muted">Here's what's happening on your workspace.</p>
+        <h1>Welcome back, {user?.username}</h1>
+        <p className="text-muted">Here&apos;s what your workspace and community footprint look like today.</p>
       </div>
 
-      {/* Stats */}
       <div className="stats-grid">
-        {[
-          { icon: '🗂️', label: 'Projects', value: stats.projects, color: 'var(--purple-lt)' },
-          { icon: '🆘', label: 'Help Posts', value: stats.help_posts, color: 'var(--blue)' },
-          { icon: '✅', label: 'Replies Given', value: stats.replies_given, color: 'var(--green)' },
-          { icon: '⭐', label: 'Reputation', value: stats.replies_given * 10, color: 'var(--yellow)' },
-        ].map(s => (
-          <div className="stat-card" key={s.label}>
-            <div className="stat-icon">{s.icon}</div>
-            <div className="stat-value" style={{ color: s.color }}>{loading ? '—' : s.value}</div>
-            <div className="stat-label">{s.label}</div>
+        {summaryCards.map(card => (
+          <div className="stat-card" key={card.icon}>
+            <div className="stat-icon">{card.emoji}</div>
+            <div className="stat-value" style={{ color: card.color }}>{loading ? '—' : card.value}</div>
+            <div className="stat-label">{card.icon}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
-        {/* Recent Projects */}
-        <div>
-          <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
-            <h2 style={{ fontWeight: 700 }}>Recent Projects</h2>
+      <div className="dashboard-split">
+        <section className="card dashboard-panel">
+          <div className="task-column-head">
+            <h2>Task Pulse</h2>
+            <button className="btn btn-ghost btn-sm" onClick={() => navigate('/tasks')}>
+              Open board <ArrowRight size={14} />
+            </button>
+          </div>
+          <div className="dashboard-task-grid">
+            <div className="mini-stat">
+              <span className="section-label">Open</span>
+              <strong>{loading ? '—' : stats.pending_tasks}</strong>
+            </div>
+            <div className="mini-stat">
+              <span className="section-label">Done</span>
+              <strong>{loading ? '—' : stats.completed_tasks}</strong>
+            </div>
+            <div className="mini-stat">
+              <span className="section-label">Late</span>
+              <strong>{loading ? '—' : stats.late_tasks}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="card dashboard-panel dashboard-panel-accent">
+          <span className="section-label">Momentum</span>
+          <h2>See where your energy is actually landing.</h2>
+          <p className="text-muted">Analytics now comes from your real task history, so the signal and the app finally match.</p>
+          <button className="btn btn-primary btn-sm" onClick={() => navigate('/analytics')}>
+            <BarChart3 size={14} /> Open Analytics
+          </button>
+        </section>
+      </div>
+
+      <div className="dashboard-columns">
+        <section>
+          <div className="flex items-center justify-between dashboard-section-head">
+            <h2>Recent Projects</h2>
             <button className="btn btn-ghost btn-sm" onClick={() => navigate('/projects')}>
               View all <ArrowRight size={14} />
             </button>
@@ -67,30 +113,32 @@ export default function Dashboard() {
             <div className="empty-state">
               <FolderKanban size={36} />
               <h3>No projects yet</h3>
-              <button className="btn btn-primary btn-sm" onClick={() => navigate('/projects')} style={{ marginTop: 12 }}>
+              <button className="btn btn-primary btn-sm" onClick={() => navigate('/projects?new=1')} style={{ marginTop: 12 }}>
                 <Plus size={14} /> Create Project
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {recentProjects.map(p => (
-                <div key={p.id} className="card" style={{ padding: '14px 16px', cursor: 'pointer' }}
-                  onClick={() => navigate(`/editor/${p.id}`)}>
+            <div className="dashboard-card-stack">
+              {recentProjects.map(project => (
+                <div
+                  key={project.id}
+                  className="card dashboard-click-card"
+                  onClick={() => navigate(`/editor/${project.id}`)}
+                >
                   <div className="flex items-center justify-between">
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{p.name}</span>
-                    <span className="badge badge-purple">{p.language}</span>
+                    <span className="dashboard-card-title">{project.name}</span>
+                    <span className="badge badge-purple">{project.language}</span>
                   </div>
-                  <p className="text-muted text-sm" style={{ marginTop: 4 }}>{p.description || 'No description'}</p>
+                  <p className="text-muted text-sm dashboard-card-copy">{project.description || 'No description'}</p>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Recent Community Posts */}
-        <div>
-          <div className="flex items-center justify-between" style={{ marginBottom: 14 }}>
-            <h2 style={{ fontWeight: 700 }}>Community Feed</h2>
+        <section>
+          <div className="flex items-center justify-between dashboard-section-head">
+            <h2>Community Feed</h2>
             <button className="btn btn-ghost btn-sm" onClick={() => navigate('/community')}>
               View all <ArrowRight size={14} />
             </button>
@@ -99,37 +147,40 @@ export default function Dashboard() {
             <div className="empty-state">
               <HelpCircle size={36} />
               <h3>No posts yet</h3>
-              <button className="btn btn-primary btn-sm" onClick={() => navigate('/community')} style={{ marginTop: 12 }}>
+              <button className="btn btn-primary btn-sm" onClick={() => navigate('/community?ask=1')} style={{ marginTop: 12 }}>
                 <Plus size={14} /> Ask for Help
               </button>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {recentPosts.map(p => (
-                <div key={p.id} className="card" style={{ padding: '14px 16px', cursor: 'pointer' }}
-                  onClick={() => navigate(`/community/${p.id}`)}>
+            <div className="dashboard-card-stack">
+              {recentPosts.map(post => (
+                <div
+                  key={post.id}
+                  className="card dashboard-click-card"
+                  onClick={() => navigate(`/community/${post.id}`)}
+                >
                   <div className="flex items-center justify-between">
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem' }}>{p.title}</span>
-                    <span className={`badge ${p.status === 'solved' ? 'badge-green' : 'badge-yellow'}`}>{p.status}</span>
+                    <span className="dashboard-card-title">{post.title}</span>
+                    <span className={`badge ${post.status === 'solved' ? 'badge-green' : 'badge-yellow'}`}>{post.status}</span>
                   </div>
-                  <div className="flex items-center gap-1" style={{ marginTop: 6 }}>
-                    <span className="badge badge-blue">{p.language}</span>
-                    <span className="text-muted text-xs">{p.replies?.length || 0} replies</span>
+                  <div className="flex items-center gap-1 dashboard-card-copy">
+                    <span className="badge badge-blue">{post.language}</span>
+                    <span className="text-muted text-xs">{post.replies?.length || 0} replies</span>
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
 
-      {/* Quick actions */}
-      <div style={{ marginTop: 32 }}>
-        <h2 style={{ fontWeight: 700, marginBottom: 14 }}>Quick Actions</h2>
-        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+      <div className="dashboard-actions">
+        <h2>Quick Actions</h2>
+        <div className="dashboard-action-row">
           <button className="btn btn-primary" onClick={() => navigate('/editor')}><Code2 size={16} /> New File</button>
-          <button className="btn btn-ghost" onClick={() => navigate('/projects')}><FolderKanban size={16} /> New Project</button>
-          <button className="btn btn-ghost" onClick={() => navigate('/community')}><HelpCircle size={16} /> Ask for Help</button>
+          <button className="btn btn-ghost" onClick={() => navigate('/projects?new=1')}><FolderKanban size={16} /> New Project</button>
+          <button className="btn btn-ghost" onClick={() => navigate('/community?ask=1')}><HelpCircle size={16} /> Ask for Help</button>
+          <button className="btn btn-ghost" onClick={() => navigate('/tasks')}><ListTodo size={16} /> New Task</button>
         </div>
       </div>
     </div>

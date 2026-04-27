@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/client';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import toast from 'react-hot-toast';
 import { ArrowLeft, ThumbsUp, CheckCircle2, Send, Trash2 } from 'lucide-react';
 
@@ -13,16 +13,53 @@ export default function PostDetail() {
   const [loading, setLoading] = useState(true);
   const [reply, setReply] = useState({ content: '', code_snippet: '' });
   const [submitting, setSubmitting] = useState(false);
+  const createdAtFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+    []
+  );
 
   const load = async () => {
     try {
       const res = await api.get(`/community/posts/${id}`);
       setPost(res.data);
-    } catch { toast.error('Post not found'); navigate('/community'); }
+    } catch {
+      toast.error('Post not found');
+      navigate('/community');
+    }
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => {
+    let active = true;
+
+    const fetchPost = async () => {
+      try {
+        const res = await api.get(`/community/posts/${id}`);
+        if (active) {
+          setPost(res.data);
+        }
+      } catch {
+        if (active) {
+          toast.error('Post not found');
+          navigate('/community');
+        }
+      }
+      if (active) {
+        setLoading(false);
+      }
+    };
+
+    void fetchPost();
+
+    return () => {
+      active = false;
+    };
+  }, [id, navigate]);
 
   const submitReply = async (e) => {
     e.preventDefault();
@@ -33,7 +70,9 @@ export default function PostDetail() {
       toast.success('Reply posted!');
       setReply({ content: '', code_snippet: '' });
       load();
-    } catch { toast.error('Failed to post reply'); }
+    } catch {
+      toast.error('Failed to post reply');
+    }
     setSubmitting(false);
   };
 
@@ -41,7 +80,9 @@ export default function PostDetail() {
     try {
       await api.post(`/community/replies/${replyId}/upvote`);
       load();
-    } catch { toast.error('Could not upvote'); }
+    } catch {
+      toast.error('Could not upvote');
+    }
   };
 
   const accept = async (replyId) => {
@@ -49,7 +90,9 @@ export default function PostDetail() {
       await api.put(`/community/replies/${replyId}/accept`);
       toast.success('Answer accepted! Post marked as solved ✅');
       load();
-    } catch { toast.error('Could not accept reply'); }
+    } catch {
+      toast.error('Could not accept reply');
+    }
   };
 
   const deletePost = async () => {
@@ -58,10 +101,12 @@ export default function PostDetail() {
       await api.delete(`/community/posts/${id}`);
       toast.success('Post deleted');
       navigate('/community');
-    } catch { toast.error('Failed to delete'); }
+    } catch {
+      toast.error('Failed to delete');
+    }
   };
 
-  const ago = d => { const s = Math.floor((Date.now() - new Date(d)) / 1000); if (s < 60) return `${s}s ago`; if (s < 3600) return `${Math.floor(s/60)}m ago`; if (s < 86400) return `${Math.floor(s/3600)}h ago`; return `${Math.floor(s/86400)}d ago`; };
+  const formatCreatedAt = value => createdAtFormatter.format(new Date(value));
 
   if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}><div className="spinner" /></div>;
   if (!post) return null;
@@ -102,7 +147,7 @@ export default function PostDetail() {
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <span className="badge badge-blue">{post.language}</span>
           <span className="text-muted text-xs">Asked by <strong>{post.author?.username}</strong></span>
-          <span className="text-muted text-xs">{ago(post.created_at)}</span>
+          <span className="text-muted text-xs">{formatCreatedAt(post.created_at)}</span>
         </div>
       </div>
 
@@ -125,7 +170,7 @@ export default function PostDetail() {
                   {r.author?.username?.[0]?.toUpperCase()}
                 </div>
                 <span style={{ fontWeight: 600, fontSize: '0.88rem' }}>{r.author?.username}</span>
-                <span className="text-muted text-xs">{ago(r.created_at)}</span>
+                <span className="text-muted text-xs">{formatCreatedAt(r.created_at)}</span>
               </div>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 {r.is_accepted && <span className="badge badge-green"><CheckCircle2 size={10} /> Accepted</span>}

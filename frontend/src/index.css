@@ -1,30 +1,37 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT,WONK@9..144,500..900,25,1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:        #0d1117;
-  --bg2:       #161b22;
-  --bg3:       #1f2937;
-  --border:    #30363d;
-  --purple:    #7c3aed;
-  --purple-lt: #9d5cf6;
-  --blue:      #3b82f6;
-  --green:     #10b981;
-  --yellow:    #f59e0b;
-  --red:       #ef4444;
-  --text:      #e6edf3;
-  --text-muted:#8b949e;
-  --radius:    12px;
-  --radius-sm: 8px;
-  --glow:      0 0 20px rgba(124,58,237,0.35);
-  --shadow:    0 4px 24px rgba(0,0,0,0.4);
-  --transition: all 0.2s ease;
+  --font-display: 'Fraunces', serif;
+  --font-body: 'Space Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --bg:        #15130f;
+  --bg2:       #211d17;
+  --bg3:       #2c251d;
+  --paper:     #f2ead7;
+  --paper-deep:#e2d5b9;
+  --border:    #4b4032;
+  --purple:    #f04b2f;
+  --purple-lt: #ff704f;
+  --blue:      #2f6f73;
+  --green:     #7ba05b;
+  --yellow:    #e0b546;
+  --red:       #f04b2f;
+  --accent:    #f04b2f;
+  --text:      #f2ead7;
+  --text-muted:#b5a98d;
+  --radius:    14px;
+  --radius-sm: 6px;
+  --space-page: clamp(20px, 4vw, 48px);
+  --glow:      0 0 0 1px rgba(240,75,47,0.28), 0 16px 40px rgba(0,0,0,0.28);
+  --shadow:    0 18px 50px rgba(0,0,0,0.32);
+  --transition: all 0.18s ease;
 }
 
 html { scroll-behavior: smooth; }
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -33,7 +40,7 @@ body {
 
 a { color: inherit; text-decoration: none; }
 button { cursor: pointer; font-family: inherit; }
-code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+code, pre, .mono { font-family: var(--font-mono); }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -69,10 +76,10 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
   transition: var(--transition); white-space: nowrap;
 }
 .btn-primary {
-  background: linear-gradient(135deg, var(--purple), var(--blue));
-  color: #fff;
+  background: var(--accent);
+  color: #180f0b;
 }
-.btn-primary:hover { opacity: 0.88; transform: translateY(-1px); box-shadow: var(--glow); }
+.btn-primary:hover { transform: translate(-1px, -2px) rotate(-1deg); box-shadow: var(--glow); }
 .btn-ghost {
   background: transparent; color: var(--text-muted);
   border: 1px solid var(--border);
@@ -103,7 +110,7 @@ code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
   font-family: inherit; font-size: 0.9rem;
   outline: none; transition: var(--transition);
 }
-.input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(124,58,237,0.18); }
+.input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(240,75,47,0.18); }
 .input::placeholder { color: var(--text-muted); }
 .input-group { display: flex; flex-direction: column; gap: 6px; }
 .input-group label { font-size: 0.85rem; font-weight: 500; color: var(--text-muted); }
@@ -115,7 +122,7 @@ textarea.input { resize: vertical; min-height: 90px; }
   padding: 3px 10px; border-radius: 99px;
   font-size: 0.72rem; font-weight: 600; letter-spacing: 0.03em;
 }
-.badge-purple { background: rgba(124,58,237,0.18); color: var(--purple-lt); }
+.badge-purple { background: rgba(240,75,47,0.16); color: var(--purple-lt); }
 .badge-green  { background: rgba(16,185,129,0.15); color: var(--green); }
 .badge-yellow { background: rgba(245,158,11,0.15); color: var(--yellow); }
 .badge-blue   { background: rgba(59,130,246,0.15); color: var(--blue); }
@@ -132,9 +139,9 @@ textarea.input { resize: vertical; min-height: 90px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Page wrapper ── */
-.page { padding: 32px; max-width: 1200px; }
+.page { padding: var(--space-page); max-width: 1200px; }
 .page-header { margin-bottom: 28px; }
-.page-header h1 { font-size: 1.75rem; font-weight: 700; }
+.page-header h1 { font-family: var(--font-display); font-size: clamp(2rem, 4vw, 3.6rem); font-weight: 800; line-height: 0.95; }
 .page-header p  { color: var(--text-muted); margin-top: 6px; }
 
 /* ── Divider ── */

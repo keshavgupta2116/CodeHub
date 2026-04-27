@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 import toast from 'react-hot-toast';
 import { Plus, HelpCircle, Search, MessageSquare, CheckCircle2 } from 'lucide-react';
@@ -8,14 +8,24 @@ const LANGS = ['python','javascript','typescript','html','css','java','cpp','go'
 
 export default function Community() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAsk, setShowAsk] = useState(false);
+  const [showAsk, setShowAsk] = useState(() => searchParams.get('ask') === '1');
   const [form, setForm] = useState({ title: '', description: '', code_snippet: '', language: 'python' });
   const [posting, setPosting] = useState(false);
   const [search, setSearch] = useState('');
   const [langFilter, setLangFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const createdAtFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+    []
+  );
 
   const load = async () => {
     setLoading(true);
@@ -26,11 +36,48 @@ export default function Community() {
       if (search)       params.set('search', search);
       const res = await api.get(`/community/posts?${params}`);
       setPosts(res.data);
-    } catch { toast.error('Failed to load posts'); }
+    } catch {
+      toast.error('Failed to load posts');
+    }
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, [langFilter, statusFilter]);
+  useEffect(() => {
+    let active = true;
+
+    const fetchPosts = async () => {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (langFilter) params.set('language', langFilter);
+        if (statusFilter) params.set('status', statusFilter);
+        if (search) params.set('search', search);
+        const res = await api.get(`/community/posts?${params}`);
+        if (active) {
+          setPosts(res.data);
+        }
+      } catch {
+        if (active) {
+          toast.error('Failed to load posts');
+        }
+      }
+      if (active) {
+        setLoading(false);
+      }
+    };
+
+    void fetchPosts();
+
+    return () => {
+      active = false;
+    };
+  }, [langFilter, search, statusFilter]);
+
+  useEffect(() => {
+    if (searchParams.get('ask') === '1') {
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const handleSearch = (e) => { e.preventDefault(); load(); };
 
@@ -48,7 +95,7 @@ export default function Community() {
   };
 
   const set = k => e => setForm(p => ({ ...p, [k]: e.target.value }));
-  const ago = d => { const s = Math.floor((Date.now() - new Date(d)) / 1000); if (s < 60) return `${s}s ago`; if (s < 3600) return `${Math.floor(s/60)}m ago`; if (s < 86400) return `${Math.floor(s/3600)}h ago`; return `${Math.floor(s/86400)}d ago`; };
+  const formatCreatedAt = value => createdAtFormatter.format(new Date(value));
 
   return (
     <div className="page animate-fade">
@@ -111,7 +158,7 @@ export default function Community() {
               <div className="post-meta">
                 <span className="badge badge-blue">{p.language}</span>
                 <span className="text-muted text-xs">by <strong>{p.author?.username}</strong></span>
-                <span className="text-muted text-xs">{ago(p.created_at)}</span>
+                <span className="text-muted text-xs">{formatCreatedAt(p.created_at)}</span>
                 <span className="text-muted text-xs" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <MessageSquare size={12} /> {p.replies?.length || 0}
                 </span>

@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/useAuth';
 import Landing from './pages/Landing';
 import AppShell from './components/AppShell';
 import Dashboard from './pages/Dashboard';
@@ -9,8 +10,10 @@ import Projects from './pages/Projects';
 import Community from './pages/Community';
 import PostDetail from './pages/PostDetail';
 import Profile from './pages/Profile';
+import Tasks from './pages/Tasks';
+import Analytics from './pages/Analytics';
 import './index.css';
-import './app.css';
+import './App.css';
 
 function PrivateRoute({ children }) {
   const { user } = useAuth();
@@ -38,6 +41,8 @@ export default function App() {
             <Route path="projects"  element={<Projects />} />
             <Route path="community" element={<Community />} />
             <Route path="community/:id" element={<PostDetail />} />
+            <Route path="tasks" element={<Tasks />} />
+            <Route path="analytics" element={<Analytics />} />
             <Route path="profile"   element={<Profile />} />
             <Route path="profile/:username" element={<Profile />} />
           </Route>

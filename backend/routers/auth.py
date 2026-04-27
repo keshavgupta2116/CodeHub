@@ -31,3 +31,8 @@ def login(payload: schemas.UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_access_token({"sub": str(user.id)})
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.post("/logout", response_model=schemas.MessageOut)
+def logout():
+    return {"detail": "Logged out"}

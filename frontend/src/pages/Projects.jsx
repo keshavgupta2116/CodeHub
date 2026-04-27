@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../api/client';
 import toast from 'react-hot-toast';
 import { Plus, Code2, Trash2, Globe, Lock, Search } from 'lucide-react';
@@ -8,23 +8,47 @@ const LANGS = ['python','javascript','typescript','html','css','java','cpp','go'
 
 export default function Projects() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
+  const [showCreate, setShowCreate] = useState(() => searchParams.get('new') === '1');
   const [form, setForm] = useState({ name: '', description: '', language: 'python', is_public: true });
   const [creating, setCreating] = useState(false);
   const [search, setSearch] = useState('');
   const [langFilter, setLangFilter] = useState('');
 
-  const load = async () => {
-    try {
-      const res = await api.get('/projects/' + (langFilter ? `?language=${langFilter}` : ''));
-      setProjects(res.data);
-    } catch { toast.error('Failed to load projects'); }
-    setLoading(false);
-  };
+  useEffect(() => {
+    let active = true;
 
-  useEffect(() => { load(); }, [langFilter]);
+    const fetchProjects = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get('/projects/' + (langFilter ? `?language=${langFilter}` : ''));
+        if (active) {
+          setProjects(res.data);
+        }
+      } catch {
+        if (active) {
+          toast.error('Failed to load projects');
+        }
+      }
+      if (active) {
+        setLoading(false);
+      }
+    };
+
+    void fetchProjects();
+
+    return () => {
+      active = false;
+    };
+  }, [langFilter]);
+
+  useEffect(() => {
+    if (searchParams.get('new') === '1') {
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const create = async (e) => {
     e.preventDefault();
@@ -35,7 +59,9 @@ export default function Projects() {
       setShowCreate(false);
       setForm({ name: '', description: '', language: 'python', is_public: true });
       navigate(`/editor/${res.data.id}`);
-    } catch (err) { toast.error(err.response?.data?.detail || 'Failed'); }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed');
+    }
     setCreating(false);
   };
 
@@ -46,7 +72,9 @@ export default function Projects() {
       await api.delete(`/projects/${id}`);
       setProjects(p => p.filter(x => x.id !== id));
       toast.success('Project deleted');
-    } catch { toast.error('Delete failed'); }
+    } catch {
+      toast.error('Delete failed');
+    }
   };
 
   const filtered = projects.filter(p =>

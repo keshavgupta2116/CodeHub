@@ -17,6 +17,9 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class MessageOut(BaseModel):
+    detail: str
+
 class UserOut(BaseModel):
     id: int
     username: str
@@ -107,3 +110,64 @@ class ReplyOut(BaseModel):
 class UserProfileUpdate(BaseModel):
     bio: Optional[str] = None
     avatar_url: Optional[str] = None
+
+
+class UserStatsOut(BaseModel):
+    projects: int
+    help_posts: int
+    replies_given: int
+    reputation: int
+    total_tasks: int
+    completed_tasks: int
+    pending_tasks: int
+    late_tasks: int
+
+
+# ─── Tasks and Analytics ──────────────────────────────────────────────────────
+class TaskCreate(BaseModel):
+    title: str
+    category: str = "Personal"
+    deadline: Optional[datetime] = None
+    status: str = "pending"
+
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = None
+    category: Optional[str] = None
+    deadline: Optional[datetime] = None
+    status: Optional[str] = None
+
+
+class TaskOut(BaseModel):
+    id: int
+    user_id: int
+    title: str
+    category: str
+    deadline: Optional[datetime]
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CategoryInsight(BaseModel):
+    category: str
+    total: int
+    completed: int
+    completion_rate: float
+    late_count: int
+
+
+class AnalyticsOut(BaseModel):
+    total_tasks: int
+    completed_tasks: int
+    late_tasks: int
+    productivity_score: float
+    discipline_score: float
+    best_category: Optional[str]
+    weakest_category: Optional[str]
+    peak_productive_time: str
+    category_breakdown: List[CategoryInsight]
+    suggestions: List[str]

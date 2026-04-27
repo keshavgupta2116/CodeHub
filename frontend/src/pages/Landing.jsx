@@ -1,26 +1,67 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../context/useAuth';
 import toast from 'react-hot-toast';
+import { ArrowRight, Braces, Check, Code2, GitBranch, Sparkles } from 'lucide-react';
+
+function MagneticButton({
+  children,
+  href,
+  variant = 'primary',
+  size = 'md',
+  type = 'button',
+  disabled = false,
+}) {
+  const className = `magnetic-btn magnetic-${variant} magnetic-${size}`;
+
+  if (href) {
+    return (
+      <a
+        className={className}
+        href={href}
+      >
+        <span>{children}</span>
+      </a>
+    );
+  }
+
+  return (
+    <button
+      type={type}
+      className={className}
+      onClick={onClick}
+      disabled={disabled}
+    >
+      <span>{children}</span>
+    </button>
+  );
+}
 
 export default function Landing() {
-  const [showAuth, setShowAuth] = useState(false);
-  const [tab, setTab] = useState('login');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [form, setForm] = useState({ username: '', email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const { login, register } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const authMode = searchParams.get('auth');
+  const showAuth = authMode === 'login' || authMode === 'signup';
+  const tab = useMemo(() => (authMode === 'signup' ? 'signup' : 'login'), [authMode]);
+
+  const closeAuth = () => {
+    setSearchParams({}, { replace: true });
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
     setLoading(true);
     try {
       if (tab === 'login') {
         await login(form.email, form.password);
-        toast.success('Welcome back!');
+        toast.success('Welcome back.');
       } else {
         await register(form.username, form.email, form.password);
-        toast.success('Account created! Welcome to CodeHub 🚀');
+        toast.success('Account created. Your bench is ready.');
       }
       navigate('/dashboard');
     } catch (err) {
@@ -30,100 +71,137 @@ export default function Landing() {
     }
   };
 
-  const set = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
+  const set = (key) => (event) => setForm((prev) => ({ ...prev, [key]: event.target.value }));
 
   return (
-    <div className="landing animate-fade">
-      {/* Nav */}
-      <nav className="landing-nav">
-        <div className="sidebar-logo" style={{ padding: 0 }}>
-          <div className="logo-icon" style={{ borderRadius: 8 }}>💻</div>
-          <span style={{ fontSize: '1.15rem' }}>CodeHub</span>
-        </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => { setTab('login'); setShowAuth(true); }}>Log in</button>
-          <button className="btn btn-primary btn-sm" onClick={() => { setTab('signup'); setShowAuth(true); }}>Sign up free</button>
+    <div className="landing landing-reveal">
+      <div className="paper-grain" />
+
+      <nav className="landing-nav" aria-label="Primary navigation">
+        <a className="brand-mark" href="/">
+          <span className="brand-stamp"><Code2 size={18} /></span>
+          <span>CodeHub</span>
+        </a>
+        <div className="nav-actions" aria-label="Account actions">
+          <MagneticButton variant="ghost" size="sm" href="/?auth=login">Log in</MagneticButton>
+          <MagneticButton variant="primary" size="sm" href="/?auth=signup">Join bench</MagneticButton>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="hero">
-        <div className="hero-bg" />
-        <h1>Code. Collaborate.<br /><span>Ship Together.</span></h1>
-        <p>The all-in-one platform to write code, store your projects, ask for help, and help others — all in one place.</p>
-        <div className="hero-actions">
-          <button className="btn btn-primary" style={{ fontSize: '1rem', padding: '12px 28px' }} onClick={() => { setTab('signup'); setShowAuth(true); }}>
-            Get started free →
-          </button>
-          <button className="btn btn-ghost" style={{ fontSize: '1rem', padding: '12px 28px' }} onClick={() => { setTab('login'); setShowAuth(true); }}>
-            Log in
-          </button>
-        </div>
-
-        {/* Fake code preview */}
-        <div className="hero-code-glow">
-          <div><span className="code-line-num">1</span><span className="cm"># Welcome to CodeHub</span></div>
-          <div><span className="code-line-num">2</span><span className="kw">def </span><span className="fn">solve_together</span>(problem):</div>
-          <div><span className="code-line-num">3</span>&nbsp;&nbsp;&nbsp;&nbsp;<span className="st">"Ask the community, get answers fast"</span></div>
-          <div><span className="code-line-num">4</span>&nbsp;&nbsp;&nbsp;&nbsp;solution = community.<span className="fn">help</span>(problem)</div>
-          <div><span className="code-line-num">5</span>&nbsp;&nbsp;&nbsp;&nbsp;<span className="kw">return </span>solution.<span className="fn">mark_accepted</span>()</div>
-          <div><span className="code-line-num">6</span></div>
-          <div><span className="code-line-num">7</span><span className="cm"># Your projects, always safe 🔒</span></div>
-          <div><span className="code-line-num">8</span>project.<span className="fn">save</span>() <span className="cm"># stored in the cloud</span></div>
-        </div>
-      </section>
-
-      {/* Features */}
-      <div style={{ background: 'var(--bg2)', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
-        <div className="features">
-          {[
-            { icon: '✍️', title: 'Code Editor', desc: 'Full-featured VS Code–powered editor with syntax highlighting for 20+ languages.' },
-            { icon: '🗂️', title: 'Project Storage', desc: 'Store and organize all your projects. Access from anywhere, anytime.' },
-            { icon: '🆘', title: 'Ask for Help', desc: 'Stuck on a bug? Post your code and get answers from the community instantly.' },
-            { icon: '🤝', title: 'Give Help', desc: 'Share your expertise, answer questions, and earn reputation.' },
-          ].map(f => (
-            <div className="feature-card" key={f.title}>
-              <div className="feature-icon">{f.icon}</div>
-              <h3>{f.title}</h3>
-              <p>{f.desc}</p>
+      <main>
+        <section className="hero editorial-band">
+          <div className="hero-kicker">Shared code rooms for practical builders</div>
+          <div className="hero-layout">
+            <div className="hero-copy">
+              <h1>
+                Build in public.
+                <span>Debug in good company.</span>
+              </h1>
+              <p>
+                CodeHub gives students and makers one rough-edged place to save projects,
+                ask precise questions, and turn lonely errors into solved work.
+              </p>
+              <div className="hero-actions">
+                <MagneticButton variant="primary" size="lg" href="/?auth=signup">
+                  Start a workspace <ArrowRight size={17} />
+                </MagneticButton>
+                <MagneticButton variant="ghost" size="lg" href="/?auth=login">
+                  Return to code
+                </MagneticButton>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* CTA */}
-      <div style={{ textAlign: 'center', padding: '80px 40px' }}>
-        <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: 12 }}>Ready to start coding?</h2>
-        <p style={{ color: 'var(--text-muted)', marginBottom: 28 }}>Join hundreds of developers on CodeHub today.</p>
-        <button className="btn btn-primary" style={{ fontSize: '1rem', padding: '13px 32px' }} onClick={() => { setTab('signup'); setShowAuth(true); }}>
-          Create free account →
-        </button>
-      </div>
+            <aside className="hero-ledger" aria-label="CodeHub workspace preview">
+              <div className="ledger-label">Live bench</div>
+              <div className="ledger-row">
+                <span>open projects</span>
+                <strong>18</strong>
+              </div>
+              <div className="ledger-row offset">
+                <span>answers shipped</span>
+                <strong>73</strong>
+              </div>
+              <div className="ledger-code">
+                <span className="code-dot" />
+                <pre>{`function unblock(thread) {
+  return thread
+    .withContext()
+    .shipAnswer();
+}`}</pre>
+              </div>
+            </aside>
+          </div>
+          <div className="rotated-note">No sterile dashboards</div>
+        </section>
 
-      {/* Auth Modal */}
+        <section className="proof-strip" aria-label="CodeHub capabilities">
+          <article>
+            <Braces size={22} />
+            <h2>Editor first</h2>
+            <p>Draft, revise, and keep files where your project context already lives.</p>
+          </article>
+          <article className="proof-featured">
+            <GitBranch size={22} />
+            <h2>Projects with memory</h2>
+            <p>Every snippet has a home, every bug report has a trail, every fix can be found again.</p>
+          </article>
+          <article>
+            <Sparkles size={22} />
+            <h2>Help that reads code</h2>
+            <p>Ask with the exact language, snippet, and status instead of shouting into a void.</p>
+          </article>
+        </section>
+
+        <section className="manifesto">
+          <div className="quote-mark">"</div>
+          <p>
+            The best developer tools do not pretend the work is frictionless.
+            They make the friction visible, shared, and easier to finish.
+          </p>
+          <svg className="hand-underline" viewBox="0 0 420 30" role="img" aria-label="Hand drawn underline">
+            <path d="M5 18C70 8 135 25 201 14C269 3 329 20 415 11" />
+          </svg>
+        </section>
+
+        <section className="split-cta">
+          <div>
+            <span className="section-label">Ship the next thing</span>
+            <h2>Open the editor, post the blocker, keep moving.</h2>
+          </div>
+          <ul className="check-list">
+            <li><Check size={16} /> Project storage without ceremony</li>
+            <li><Check size={16} /> Community questions with code attached</li>
+            <li><Check size={16} /> A workspace that feels built, not rented</li>
+          </ul>
+          <MagneticButton variant="primary" size="lg" href="/?auth=signup">
+            Create your bench
+          </MagneticButton>
+        </section>
+      </main>
+
       {showAuth && (
-        <div className="modal-overlay" onClick={() => setShowAuth(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={closeAuth}>
+          <div className="modal auth-modal" onClick={(event) => event.stopPropagation()}>
             <div className="auth-tabs">
-              <button className={`auth-tab ${tab === 'login' ? 'active' : ''}`} onClick={() => setTab('login')}>Log in</button>
-              <button className={`auth-tab ${tab === 'signup' ? 'active' : ''}`} onClick={() => setTab('signup')}>Sign up</button>
+              <button className={`auth-tab ${tab === 'login' ? 'active' : ''}`} onClick={() => setSearchParams({ auth: 'login' }, { replace: true })}>Log in</button>
+              <button className={`auth-tab ${tab === 'signup' ? 'active' : ''}`} onClick={() => setSearchParams({ auth: 'signup' }, { replace: true })}>Sign up</button>
             </div>
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <form className="auth-form" onSubmit={handleSubmit}>
               {tab === 'signup' && (
                 <div className="input-group">
                   <label>Username</label>
-                  <input className="input" placeholder="johndoe" value={form.username} onChange={set('username')} required />
+                  <input className="input" placeholder="maya_codes" value={form.username} onChange={set('username')} required />
                 </div>
               )}
               <div className="input-group">
                 <label>Email</label>
-                <input className="input" type="email" placeholder="you@example.com" value={form.email} onChange={set('email')} required />
+                <input className="input" type="email" placeholder="you@codehub.dev" value={form.email} onChange={set('email')} required />
               </div>
               <div className="input-group">
                 <label>Password</label>
-                <input className="input" type="password" placeholder="••••••••" value={form.password} onChange={set('password')} required minLength={6} />
+                <input className="input" type="password" placeholder="At least 6 characters" value={form.password} onChange={set('password')} required minLength={6} />
               </div>
-              <button className="btn btn-primary w-full" type="submit" disabled={loading} style={{ marginTop: 6 }}>
+              <button className="btn btn-primary w-full" type="submit" disabled={loading}>
                 {loading ? <span className="spinner" /> : tab === 'login' ? 'Log in' : 'Create account'}
               </button>
             </form>
